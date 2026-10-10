@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifikasi</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+
+    html, body {
+        height:100%;
+        overflow:hidden;
+        font-family:'Segoe UI', system-ui, sans-serif;
+        background:#ffffff;
+        color:#000000;
+    }
+
+    .screen {
+        position:fixed;
+        inset:0;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        gap:24px;
+        padding:20px;
+        background:#ffffff;
+        color:#000000;
+        opacity:0;
+        visibility:hidden;
+        transition:opacity .3s ease, visibility .3s;
+    }
+    .screen.active {
+        opacity:1;
+        visibility:visible;
+    }
+
+    /* ===== LAYAR 1 : VERIFIKASI ===== */
+    .verify-title {
+        font-size:clamp(1.8rem, 5vw, 2.8rem);
+        font-weight:900;
+        letter-spacing:3px;
+        text-align:center;
+    }
+
+    .verify-sub {
+        font-size:clamp(.95rem, 2.5vw, 1.1rem);
+        text-align:center;
+        max-width:520px;
+        line-height:1.6;
+    }
+
+    .btn-verify {
+        background:#ffffff;
+        border:3px solid #000000;
+        border-radius:0;
+        padding:14px 48px;
+        font-size:1.5rem;
+        font-weight:900;
+        letter-spacing:3px;
+        color:#000000;
+        cursor:pointer;
+        font-family:'Segoe UI', system-ui, sans-serif;
+        transition:background .12s, color .12s;
+    }
+    .btn-verify:hover:not(:disabled) {
+        background:#000000;
+        color:#ffffff;
+    }
+    .btn-verify:disabled {
+        opacity:.5;
+        cursor:wait;
+    }
+
+    /* Spinner verifikasi */
+    .spinner {
+        width:36px;
+        height:36px;
+        border:3px solid #dddddd;
+        border-top-color:#000000;
+        border-radius:50%;
+        animation:spin .8s linear infinite;
+        display:none;
+    }
+    .spinner.on { display:block; }
+    @keyframes spin {
+        to { transform:rotate(360deg); }
+    }
+
+    /* ===== LAYAR 2 : PERTANYAAN ===== */
+    #quizImage {
+        max-width:min(70vw, 460px);
+        max-height:45vh;
+        object-fit:contain;
+        border:3px solid #000000;
+    }
+
+    .question {
+        font-size:clamp(1.3rem, 4vw, 1.9rem);
+        font-weight:800;
+        text-align:center;
+        letter-spacing:1px;
+    }
+
+    .answers {
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+        width:min(90vw, 400px);
+    }
+
+    .answer-btn {
+        background:#ffffff;
+        border:3px solid #000000;
+        border-radius:0;
+        padding:14px 20px;
+        font-size:1.1rem;
+        font-weight:800;
+        letter-spacing:1px;
+        color:#000000;
+        cursor:pointer;
+        text-align:left;
+        font-family:'Segoe UI', system-ui, sans-serif;
+        transition:background .12s, color .12s;
+    }
+    .answer-btn:hover:not(:disabled) {
+        background:#000000;
+        color:#ffffff;
+    }
+    .answer-btn:disabled {
+        opacity:.4;
+        cursor:not-allowed;
+    }
+
+    /* ===== LAYAR 3 : HASIL ===== */
+    #resultImage {
+        max-width:95vw;
+        max-height:95vh;
+        object-fit:contain;
+        border:3px solid #000000;
+    }
+</style>
+</head>
+<body>
+
+    <!-- ====== LAYAR 1: VERIFIKASI ====== -->
+    <div class="screen active" id="verifyScreen">
+        <div class="verify-title">VERIFIKASI DULU</div>
+        <div class="verify-sub">Sebelum bermain, verifikasi terlebih dahulu.<br>Klik tombol di bawah untuk melanjutkan.</div>
+        <button class="btn-verify" id="verifyBtn">VERIFIKASI</button>
+        <div class="spinner" id="spinner"></div>
+    </div>
+
+    <!-- ====== LAYAR 2: PERTANYAAN ====== -->
+    <div class="screen" id="quizScreen">
+        <img id="quizImage" src="30.png" alt="Pertanyaan">
+        <div class="question">Siapa itu muslim?</div>
+        <div class="answers">
+            <button class="answer-btn" id="btnA" data-answer="A">A. Bapak Yusuf</button>
+            <button class="answer-btn" id="btnB" data-answer="B">B. Bapak Wira</button>
+        </div>
+    </div>
+
+    <!-- ====== LAYAR 3: HASIL ====== -->
+    <div class="screen" id="resultScreen">
+        <img id="resultImage" src="" alt="Hasil">
+    </div>
+
+<script>
+(function () {
+    'use strict';
+
+    const verifyScreen = document.getElementById('verifyScreen');
+    const quizScreen   = document.getElementById('quizScreen');
+    const resultScreen = document.getElementById('resultScreen');
+
+    const verifyBtn = document.getElementById('verifyBtn');
+    const spinner   = document.getElementById('spinner');
+
+    const btnA = document.getElementById('btnA');
+    const btnB = document.getElementById('btnB');
+
+    const resultImage = document.getElementById('resultImage');
+
+    // Preload gambar penting
+    ['30.png','20.png','21.png','41.png'].forEach(src => {
+        const im = new Image();
+        im.src = src;
+    });
+
+    function showScreen(el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    // ===== LAYAR 1: VERIFIKASI =====
+    verifyBtn.addEventListener('click', function () {
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'MEMVERIFIKASI...';
+        spinner.classList.add('on');
+
+        setTimeout(() => {
+            spinner.classList.remove('on');
+            showScreen(quizScreen);
+        }, 1200);
+    });
+
+    // ===== LAYAR 2: JAWABAN =====
+    function lockAnswers() {
+        btnA.disabled = true;
+        btnB.disabled = true;
+    }
+
+    // Jawaban A → 20.png → 21.png → gam.html
+    btnA.addEventListener('click', function () {
+        lockAnswers();
+
+        resultImage.src = '20.png';
+        showScreen(resultScreen);
+
+        setTimeout(() => {
+            resultImage.src = '21.png';
+
+            setTimeout(() => {
+                window.location.href = 'gam.html';
+            }, 1500);
+        }, 1500);
+    });
+
+    // Jawaban B → 41.png → reload
+    btnB.addEventListener('click', function () {
+        lockAnswers();
+
+        resultImage.src = '41.png';
+        showScreen(resultScreen);
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    });
+
+})();
+</script>
+</body>
+</html>
